@@ -7,6 +7,7 @@ use crate::handlers::{
     invitation_handler::send_invitation,
     master_group_handler::add_master_group,
     scrapers::open_library::get_open_library_data,
+    scrapers::tmdb::{get_tmdb_movie_data, get_tmdb_tv_data},
     series_handler::{add_series, get_series},
     subscriptions_handler::{add_subscription, remove_subscription},
     title_group_comment_handler::add_title_group_comment,
@@ -59,6 +60,11 @@ pub fn init(cfg: &mut web::ServiceConfig) {
             .route(
                 "/external_db/open_library",
                 web::get().to(get_open_library_data),
-            ),
+            )
+            .route(
+                "/external_db/tmdb/movie",
+                web::get().to(get_tmdb_movie_data),
+            )
+            .route("/external_db/tmdb/tv", web::get().to(get_tmdb_tv_data)),
     );
 }

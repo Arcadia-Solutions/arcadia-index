@@ -103,6 +103,9 @@ pub enum Error {
 
     #[error("not enough upload to place this bounty")]
     InsufficientUploadForBounty,
+
+    #[error("unexpected third party response")]
+    UnexpectedThirdPartyResponse(#[from] reqwest::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
