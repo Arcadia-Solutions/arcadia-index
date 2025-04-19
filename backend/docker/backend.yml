@@ -1,0 +1,15 @@
+include:
+  - postgres.yml
+services:
+  arcadia_bin:
+    container_name: arcadia_bin
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    volumes:
+      - ../.env.docker:/app/.env
+    depends_on:
+      arcadia_db:
+        condition: service_healthy

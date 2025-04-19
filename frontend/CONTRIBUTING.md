@@ -6,6 +6,8 @@ First, thanks for considering contributing to Arcadia !
 
 - [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 - [prettier](https://prettier.io)
+- [orbstack](https://docs.orbstack.dev/quick-start)
+
 
 ### Run the project :
 
@@ -22,6 +24,18 @@ npm run dev
 ```
 
 This will launch a local server for the frontend
+
+Launch the backend:
+```
+# from the project root
+docker-compose -f backend/docker/backend.yml up -d
+```
+Please note that this will perform a build the first time the command is run, which may take a while. Changes to the Dockerfile or backend files will not trigger a rebuild. If you want to pull in new changes, run:
+
+```
+docker-compose -f backend/docker/backend.yml up --build
+```
+
 
 ## Contributing
 

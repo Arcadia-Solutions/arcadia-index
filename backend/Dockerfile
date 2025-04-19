@@ -45,15 +45,19 @@ FROM debian:bookworm-slim AS debug
 WORKDIR /app
 
 COPY --chmod=777 --from=build-debug /app/target/debug/arcadia-index .
-CMD ["arcadia-index"]
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+      apt-get install -y openssl 
+CMD ["./arcadia-index"]
 
 FROM debian:bookworm-slim
 WORKDIR /app
 
 COPY --chmod=777 --from=build-prod /app/target/release/arcadia-index .
 
-# COPY docker-entrypoint.sh /usr/local/bin/
-# RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+      apt-get install -y openssl 
 
 # ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["arcadia-index"]
+CMD ["./arcadia-index"]
