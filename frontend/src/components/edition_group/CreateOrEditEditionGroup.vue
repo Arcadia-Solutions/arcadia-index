@@ -88,7 +88,7 @@
     <div class="release-date">
       <label for="release_date" class="block">{{ $t('general.release_date') }}</label>
       <DatePicker
-        v-model="editionGroupForm.release_date"
+        v-model="release_date"
         showIcon
         :showOnFocus="false"
         inputId="release_date"
@@ -116,12 +116,12 @@
           size="small"
         />
         <Message
-          v-if="$form.covers?.[index]?.invalid"
+          v-if="($form.covers as unknown as FormFieldState[])?.[index]?.invalid"
           severity="error"
           size="small"
           variant="simple"
         >
-          {{ $form.covers[index].error?.message }}
+          {{ ($form.covers as unknown as FormFieldState[])[index].error?.message }}
         </Message>
       </div>
     </div>
@@ -141,12 +141,12 @@
           size="small"
         />
         <Message
-          v-if="$form.external_links?.[index]?.invalid"
+          v-if="($form.external_links as unknown as FormFieldState[])?.[index]?.invalid"
           severity="error"
           size="small"
           variant="simple"
         >
-          {{ $form.external_links[index].error?.message }}
+          {{ ($form.external_links as unknown as FormFieldState[])[index].error?.message }}
         </Message>
       </div>
     </div>
@@ -163,7 +163,7 @@
   </Form>
 </template>
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import FloatLabel from 'primevue/floatlabel'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -171,15 +171,20 @@ import Select from 'primevue/select'
 import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
 import Message from 'primevue/message'
-import { Form, type FormResolverOptions, type FormSubmitEvent } from '@primevue/forms'
+import {
+  Form,
+  type FormFieldState,
+  type FormResolverOptions,
+  type FormSubmitEvent,
+} from '@primevue/forms'
 import { useI18n } from 'vue-i18n'
 import { isValidUrl } from '@/services/helpers'
 import type { TitleGroupLite, UserCreatedEditionGroup } from '@/services/api/torrentService'
 
 interface Props {
   titleGroup: TitleGroupLite
-  sendingEditionGroup: boolean
-  initialEditionGroupForm: UserCreatedEditionGroup | null
+  sendingEditionGroup?: boolean
+  initialEditionGroupForm?: UserCreatedEditionGroup | null
 }
 const {
   titleGroup,
@@ -193,7 +198,7 @@ const emit = defineEmits<{
   validated: [editionGroup: UserCreatedEditionGroup]
 }>()
 
-let editionGroupForm: UserCreatedEditionGroup = {
+const editionGroupForm = ref<UserCreatedEditionGroup>({
   name: '',
   description: null,
   external_links: [''],
@@ -203,7 +208,20 @@ let editionGroupForm: UserCreatedEditionGroup = {
   source: null,
   distributor: '',
   additional_information: {},
-}
+})
+
+const release_date = computed({
+  get() {
+    const date = new Date(editionGroupForm.value.release_date)
+    if (!isNaN(date.getTime())) {
+      return date
+    }
+    return new Date()
+  },
+  set(date) {
+    editionGroupForm.value.release_date = date.toISOString()
+  },
+})
 
 const resolver = ({ values }: FormResolverOptions) => {
   const errors: Partial<Record<keyof UserCreatedEditionGroup, { message: string }[]>> = {}
@@ -228,7 +246,7 @@ const resolver = ({ values }: FormResolverOptions) => {
       if (!('external_links' in errors)) {
         errors.external_links = []
       }
-      errors.external_links[index] = [{ message: t('error.invalid_url') }]
+      errors.external_links![index] = { message: t('error.invalid_url') }
     }
   })
   values.covers.forEach((link: string, index: number) => {
@@ -236,7 +254,7 @@ const resolver = ({ values }: FormResolverOptions) => {
       if (!('covers' in errors)) {
         errors.covers = []
       }
-      errors.covers[index] = [{ message: t('error.invalid_url') }]
+      errors.covers![index] = { message: t('error.invalid_url') }
     }
   })
 
@@ -247,32 +265,32 @@ const resolver = ({ values }: FormResolverOptions) => {
 
 const onFormSubmit = ({ valid }: FormSubmitEvent) => {
   if (valid) {
-    emit('validated', editionGroupForm)
+    emit('validated', editionGroupForm.value)
   }
 }
 const addCover = () => {
-  editionGroupForm.covers.push('')
+  editionGroupForm.value.covers.push('')
 }
 const removeCover = (index: number) => {
-  editionGroupForm.covers.splice(index, 1)
+  editionGroupForm.value.covers.splice(index, 1)
 }
 const addLink = () => {
-  editionGroupForm.external_links.push('')
+  editionGroupForm.value.external_links.push('')
 }
 const removeLink = (index: number) => {
-  editionGroupForm.external_links.splice(index, 1)
+  editionGroupForm.value.external_links.splice(index, 1)
 }
 
 onMounted(() => {
   if (titleGroup.id !== 0) {
-    editionGroupForm.title_group_id = titleGroup.id
+    editionGroupForm.value.title_group_id = titleGroup.id
   }
   if (initialEditionGroupForm !== null) {
-    editionGroupForm = initialEditionGroupForm
+    editionGroupForm.value = initialEditionGroupForm
   }
   if (titleGroup.content_type == 'music') {
-    editionGroupForm.additional_information.label = ''
-    editionGroupForm.additional_information.catalogue_number = ''
+    editionGroupForm.value.additional_information.label = ''
+    editionGroupForm.value.additional_information.catalogue_number = ''
   }
 })
 </script>
@@ -281,25 +299,32 @@ onMounted(() => {
   width: 100%;
   height: 10em;
 }
+
 .select-source {
   width: 150px;
 }
+
 .release-date {
   margin-top: 20px;
 }
+
 .input-list {
   margin-top: 15px;
 }
+
 .input-list .p-component {
   margin-right: 5px;
   margin-bottom: 5px;
 }
+
 .input-list input {
   width: 400px;
 }
+
 .p-floatlabel {
   margin-top: 30px;
 }
+
 .validate-button {
   margin-top: 20px;
 }

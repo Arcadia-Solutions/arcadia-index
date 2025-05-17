@@ -15,9 +15,9 @@
     </FloatLabel>
     <div class="flex justify-content-center">
       <Button
-        v-if="step == 3 || action == 'select'"
+        v-if="step == 3"
         :label="$t('general.submit')"
-        @click="sendTitleGroup"
+        @click="sendSelectedTitleGroup"
         icon="pi pi-check"
         size="small"
         class="validate-button"
@@ -180,9 +180,16 @@ const action = ref('select') // create | select
 const titleGroupId = ref<number | null>(null)
 const step = ref(1)
 const manualCreation = ref(false)
-const selectableContentTypes = ['movie', 'tv_show', 'music', 'software', 'book', 'collection']
-const content_type = ref<ContentType>('')
-let gettingTitleGroupInfo = ref(false)
+const selectableContentTypes: ContentType[] = [
+  'movie',
+  'tv_show',
+  'music',
+  'software',
+  'book',
+  'collection',
+]
+const content_type = ref<ContentType>('movie') // consider either
+const gettingTitleGroupInfo = ref(false)
 let sendingTitleGroup = false
 let initialTitleGroupForm: UserCreatedTitleGroup | null = null
 const external_database_ids = {
@@ -213,48 +220,50 @@ const getExternalDBData = (item_id: string | number, database: string) => {
     gettingExternalDatabaseData = false
   })
 }
-const sendTitleGroup = async (titleGroupForm: UserCreatedTitleGroup) => {
-  if (action.value == 'select') {
-    gettingTitleGroupInfo.value = true
-    if (!titleGroupStore.id) {
-      const titleGroupLite = await getTitleGroupLite(titleGroupId.value).catch((error) => {
-        toast.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: error.response.data.error,
-          life: 4000,
-        })
+
+const sendSelectedTitleGroup = async (): Promise<void> => {
+  gettingTitleGroupInfo.value = true
+  if (!titleGroupStore.id && titleGroupId.value) {
+    const titleGroupLite = await getTitleGroupLite(titleGroupId.value).catch((error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.response.data.error,
+        life: 4000,
       })
-      if (titleGroupLite) {
-        titleGroupStore.id = titleGroupLite.id
-        titleGroupStore.edition_groups = titleGroupLite.edition_groups
-        titleGroupStore.content_type = titleGroupLite.content_type
-      }
+    })
+    if (titleGroupLite) {
+      titleGroupStore.id = titleGroupLite.id
+      titleGroupStore.edition_groups = titleGroupLite.edition_groups
+      titleGroupStore.content_type = titleGroupLite.content_type
     }
-    if (titleGroupStore.id) {
-      emit('done')
-    }
-    gettingTitleGroupInfo.value = false
-  } else {
-    sendingTitleGroup = true
-    titleGroupForm.content_type = content_type.value
-    console.log(content_type.value)
-    const formattedTitleGroupForm = JSON.parse(JSON.stringify(titleGroupForm))
-    // otherwise there is a json parse error, last char is "Z"
-    formattedTitleGroupForm.original_release_date =
-      formattedTitleGroupForm.original_release_date.slice(0, -1)
-    createTitleGroup(formattedTitleGroupForm)
-      .then((data) => {
-        // this.creatingTitleGroup = false
-        titleGroupStore.id = data.id
-        titleGroupStore.content_type = data.content_type
-        emit('done', data)
-      })
-      .finally(() => {
-        sendingTitleGroup = false
-      })
   }
+  if (titleGroupStore.id) {
+    emit('done')
+  }
+  gettingTitleGroupInfo.value = false
 }
+
+const sendTitleGroup = async (titleGroupForm: UserCreatedTitleGroup) => {
+  sendingTitleGroup = true
+  titleGroupForm.content_type = content_type.value
+  console.log(content_type.value)
+  const formattedTitleGroupForm = JSON.parse(JSON.stringify(titleGroupForm))
+  // otherwise there is a json parse error, last char is "Z"
+  formattedTitleGroupForm.original_release_date =
+    formattedTitleGroupForm.original_release_date.slice(0, -1)
+  createTitleGroup(formattedTitleGroupForm)
+    .then((data) => {
+      // this.creatingTitleGroup = false
+      titleGroupStore.id = data.id
+      titleGroupStore.content_type = data.content_type
+      emit('done', data)
+    })
+    .finally(() => {
+      sendingTitleGroup = false
+    })
+}
+
 onMounted(() => {
   if (titleGroupStore.id) {
     titleGroupId.value = titleGroupStore.id
@@ -267,31 +276,38 @@ onMounted(() => {
   font-size: 1.5em;
   margin-bottom: 25px;
 }
+
 .title .alternative {
   font-size: 0.8em;
   color: var(--color-secondary);
   cursor: pointer;
 }
+
 .p-floatlabel {
   margin-top: 30px;
 }
+
 .select {
   width: 200px;
 }
+
 .external-db-inputs-wrapper {
   display: flex;
   align-items: center;
   margin-bottom: 55px;
 }
+
 .external-db-inputs {
   display: flex;
   align-items: center;
   margin-left: -10px;
   margin-top: 30px;
 }
+
 .external-db-inputs .p-floatlabel {
   margin: 0px 10px;
 }
+
 .validate-button {
   margin-top: 20px;
 }

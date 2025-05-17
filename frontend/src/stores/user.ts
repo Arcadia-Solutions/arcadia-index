@@ -2,7 +2,7 @@ import type { User } from '@/services/api/userService'
 import { defineStore } from 'pinia'
 
 export const useUserStore = defineStore('user', {
-  state: () => ({
+  state: (): User => ({
     artist_comments: 0,
     avatar: null,
     average_seeding_time: 0,
@@ -35,7 +35,11 @@ export const useUserStore = defineStore('user', {
     required_ratio: 0,
     seeding: 0,
     seeding_size: 0,
-    settings: {},
+    settings: {
+      site_appearance: {
+        item_detail_layout: 'header',
+      },
+    },
     snatched: 0,
     torrent_comments: 0,
     uploaded: 0,

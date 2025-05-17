@@ -51,18 +51,24 @@ import TitleGroupPreviewCoverOnly from '@/components/title_group/TitleGroupPrevi
 import TitleGroupPreviewTable from '@/components/title_group/TitleGroupPreviewTable.vue'
 import SeriesFullHeader from '@/components/series/SeriesFullHeader.vue'
 import SeriesSidebar from '@/components/series/SeriesSidebar.vue'
+import type { TitleGroupHierarchyLite } from '@/services/api/artistService'
+import type { Series } from '@/services/api/seriesService'
 
 const userStore = useUserStore()
 const route = useRoute()
 
-const series = ref(null)
-const title_groups = ref([])
+const series = ref<Series | null>(null)
+const title_groups = ref<TitleGroupHierarchyLite[]>([])
 const title_group_preview_mode = ref<'table' | 'cover-only'>('table') // TODO: make a select button to switch from cover-only to table
 
 onMounted(async () => {
-  const data = await getSeries(route.params.id)
-  series.value = data.series
-  title_groups.value = data.title_groups
+  const id = Number(route.params.id)
+  // TODO: either toast an error message + redirect or show an error component
+  if (!Number.isNaN(id)) {
+    const data = await getSeries(id)
+    series.value = data.series
+    title_groups.value = data.title_groups
+  }
 })
 </script>
 
@@ -73,6 +79,7 @@ onMounted(async () => {
   justify-content: space-around;
   flex-wrap: wrap;
 }
+
 .preview-table {
   margin-bottom: 15px;
 }

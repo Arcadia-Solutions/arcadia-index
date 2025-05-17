@@ -149,20 +149,26 @@ const fetchTitleGroup = async () => {
 }
 
 const uploadTorrent = () => {
-  titleGroupStore.id = title_group.value.id
-  titleGroupStore.edition_groups = title_group.value.edition_groups
-  titleGroupStore.content_type = title_group.value.content_type
-  router.push({ path: '/upload' })
+  if (title_group.value) {
+    titleGroupStore.id = title_group.value.id
+    titleGroupStore.edition_groups = title_group.value.edition_groups
+    titleGroupStore.content_type = title_group.value.content_type
+    router.push({ path: '/upload' })
+  }
 }
 
 const subscribe = async () => {
   await subscribeToItem(parseInt(route.params.id.toString()), 'title_group')
-  title_group.value.is_subscribed = true
+  if (title_group.value) {
+    title_group.value.is_subscribed = true
+  }
 }
 
 const unsubscribe = async () => {
   await unsubscribeToItem(parseInt(route.params.id.toString()), 'title_group')
-  title_group.value.is_subscribed = false
+  if (title_group.value) {
+    title_group.value.is_subscribed = false
+  }
 }
 
 watch(() => route.params.id, fetchTitleGroup, { immediate: true })
@@ -172,40 +178,50 @@ watch(() => route.params.id, fetchTitleGroup, { immediate: true })
 .main.with-sidebar {
   width: 75%;
 }
+
 .sidebar {
   width: 25%;
 }
+
 .actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 5px;
 }
+
 .actions i {
   margin: 0px 0.5em;
   color: white;
   cursor: pointer;
 }
+
 .screenshots {
   margin-top: 20px;
 }
+
 .torrent-requests {
   margin-top: 20px;
 }
+
 .description {
   margin-top: 20px;
 }
+
 .title-group-description {
   margin-top: 10px;
   margin-bottom: 25px;
 }
+
 .edition-description {
   margin-top: 15px;
 }
+
 .edition-description .edition-group-slug {
   color: var(--color-primary);
   margin-bottom: 5px;
 }
+
 .comments {
   margin-top: 20px;
 }

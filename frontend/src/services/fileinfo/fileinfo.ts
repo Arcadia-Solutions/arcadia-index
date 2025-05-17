@@ -2,7 +2,7 @@ import MediainfoParser from './mediainfo/mediainfoParser'
 import MediainfoConverter from './mediainfo/mediainfoConverter'
 import { removeMediainfoTag } from './utils'
 
-function preProcess(text) {
+function preProcess(text: string) {
   const replaces = [
     { from: '\u2002', to: ' ' },
     { from: '\u200d', to: '' },
@@ -13,7 +13,7 @@ function preProcess(text) {
   return text
 }
 
-function getType(text) {
+function getType(text: string) {
   text = preProcess(text)
   return text.match(/Disc (Title|Label)\s*:/i)
     ? 'bdinfo'
@@ -22,7 +22,7 @@ function getType(text) {
       : null
 }
 
-export const getFileInfo = (text) => {
+export const getFileInfo = (text: string) => {
   text = preProcess(text)
   text = removeMediainfoTag(text)
   const type = getType(text)
@@ -36,11 +36,13 @@ export const getFileInfo = (text) => {
       return fields
     }
     case 'bdinfo': {
-      const info = new BdinfoParser().parse(text)
-      if (!info) {
-        return
-      }
-      return new BdinfoConverter().convert(info)
+      return null
+      //const info = new BdinfoParser().parse(text)
+      //if (!info) {
+      //  return
+      //}
+      //return new BdinfoConverter().convert(info)
+      return null
     }
     default:
       console.error('mediainfo unknown type, no Disc Title/Label or Complete name')

@@ -1,8 +1,11 @@
 import { uniq, compact } from 'lodash-es'
 import { AUDIO_OPTION, VIDEO_OPTION } from '../utils'
+import type { ParseResult } from './mediainfoParser'
+
+type Resolution = string | [string, string]
 
 export default class MediainfoConverter {
-  convert(info) {
+  convert(info: ParseResult) {
     const source = this.extractSource(info)
     const codec = this.extractCodec(info)
     const processing = this.extractProcessing(info, codec)
@@ -23,8 +26,8 @@ export default class MediainfoConverter {
     }
   }
 
-  extractVideoOption(info) {
-    let options = new Set()
+  extractVideoOption(info: ParseResult) {
+    const options = new Set()
     for (const v of info['video']) {
       const hdrFormat = v['hdr format']
       const bitDepth = v['bit depth']
@@ -44,8 +47,8 @@ export default class MediainfoConverter {
     return Array.from(options)
   }
 
-  extractAudioOption(info) {
-    let options = new Set()
+  extractAudioOption(info: ParseResult) {
+    const options = new Set()
     for (const a of info['audio']) {
       const channels = a['channel(s)']
       const commercialName = a['commercial name']
@@ -66,7 +69,7 @@ export default class MediainfoConverter {
     return Array.from(options)
   }
 
-  extractSource(info) {
+  extractSource(info: ParseResult) {
     const name = info['general']['complete name']
     return /bdrip|blu-?ray|bluray/i.test(name)
       ? 'Blu-ray'
@@ -85,11 +88,12 @@ export default class MediainfoConverter {
                   : ''
   }
 
-  extractContainer(info, resolution) {
+  extractContainer(info: ParseResult, resolution: Resolution) {
     const format = info['general']['format']
-    if (['PAL', 'NTSC'].includes(resolution)) {
+    if (!Array.isArray(resolution) && ['PAL', 'NTSC'].includes(resolution)) {
       return 'VOB IFO'
     }
+
     return /matroska/i.test(format)
       ? 'MKV'
       : /mpe?g-?4/i.test(format)
@@ -105,7 +109,7 @@ export default class MediainfoConverter {
                 : 'Other'
   }
 
-  extractCodec(info) {
+  extractCodec(info: ParseResult) {
     // V_MPEGH/ISO/HEVC is H265 ?
     const completeName = info['general']['complete name']
     const video = info['video'][0]
@@ -133,7 +137,7 @@ export default class MediainfoConverter {
                 : 'Other'
   }
 
-  extractProcessing(info, codec) {
+  extractProcessing(info: ParseResult, codec: string) {
     const completeName = info['general']['complete name']
     return /remux/i.test(completeName)
       ? 'Remux'
@@ -144,47 +148,47 @@ export default class MediainfoConverter {
           : ''
   }
 
-  extractResolution(info) {
+  extractResolution(info: ParseResult): string | [string, string] {
     const completeName = info['general']['complete name']
     const video = info['video'][0]
     const standard = video['standard']
     const scanType = video['scan type']
 
-    let width = video['width']
-    let height = video['height']
-    width = width && width.match(/[0-9 ]+/)[0].replace(/ /g, '')
-    height = height && height.match(/[0-9 ]+/)[0].replace(/ /g, '')
+    const width = Number(video.width && (video.width.match(/[0-9 ]+/)?.[0].replace(/ /g, '') ?? ''))
+    const height = Number(
+      video.height && (video.height.match(/[0-9 ]+/)?.[0].replace(/ /g, '') ?? ''),
+    )
 
     // 1920x567 -> 1080p
-    let resolution =
-      /2160p/i.test(completeName) || width === '3840'
+    let resolution: string | [string, string] =
+      /2160p/i.test(completeName) || width === 3840
         ? '2160p'
         : /1080i/i.test(completeName) ||
-            ((width === '1920' || (width < 1920 && height === '1080')) &&
+            ((width === 1920 || (Number(width) < 1920 && height === 1080)) &&
               (scanType === 'Interlaced' || scanType === 'MBAFF'))
           ? '1080i'
-          : /1080p/i.test(completeName) || width === '1920' || (width < 1920 && height === '1080')
+          : /1080p/i.test(completeName) || width === 1920 || (width < 1920 && height === 1080)
             ? '1080p'
-            : /720p/i.test(completeName) || width === '1280' || (width < 1280 && height === '720')
+            : /720p/i.test(completeName) || width === 1280 || (width < 1280 && height === 720)
               ? '720p'
-              : width === '1024'
+              : width === 1024
                 ? '576p'
                 : standard === 'NTSC'
                   ? 'NTSC'
-                  : width === '854' || height === '480'
+                  : width === 854 || height === 480
                     ? '480p'
                     : standard === 'PAL'
                       ? 'PAL'
                       : 'Other'
 
     if (resolution === 'Other' && width && height) {
-      resolution = [width, height]
+      resolution = [video.width, video.height] as [string, string]
     }
 
     return resolution
   }
 
-  extractSubtitle(info) {
+  extractSubtitle(info: ParseResult) {
     const texts = info['text']
     const subtitles = []
     for (const text of texts) {

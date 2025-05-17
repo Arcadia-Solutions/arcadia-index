@@ -32,7 +32,7 @@
     <div class="flex justify-content-center">
       <Button
         label="Validate edition"
-        @click="sendEditionGroup"
+        @click="() => sendEditionGroup()"
         icon="pi pi-check"
         size="small"
         class="validate-button"
@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import FloatLabel from 'primevue/floatlabel'
 import Select from 'primevue/select'
 import Button from 'primevue/button'
@@ -65,7 +65,8 @@ import { getEditionGroupSlug } from '@/services/helpers'
 // eslint-disable-next-line prefer-const
 let action = ref('select') // create | select
 const step = 1
-const titleGroup = ref({ edition_groups: [] })
+
+const titleGroup = useTitleGroupStore()
 const selected_edition_group = ref<EditionGroupInfoLite | null>(null)
 let creatingEditionGroup = false
 
@@ -73,10 +74,13 @@ const emit = defineEmits<{
   done: [editionGroup: EditionGroupInfoLite]
 }>()
 
-const sendEditionGroup = (editionGroupForm: UserCreatedEditionGroup) => {
+const sendEditionGroup = (editionGroupForm?: UserCreatedEditionGroup) => {
   if (action.value == 'select') {
-    emit('done', selected_edition_group.value)
-  } else {
+    // this should be an invariant - TODO: should we emit a warning if the value is actually null?
+    if (selected_edition_group.value) {
+      emit('done', selected_edition_group.value)
+    }
+  } else if (editionGroupForm !== undefined) {
     creatingEditionGroup = true
     const formattededitionGroupForm = JSON.parse(JSON.stringify(editionGroupForm))
     // otherwise there is a json parse error, last char is "Z"
@@ -87,30 +91,27 @@ const sendEditionGroup = (editionGroupForm: UserCreatedEditionGroup) => {
     })
   }
 }
-
-onMounted(() => {
-  const titleGroupStore = useTitleGroupStore()
-  if (titleGroupStore.id) {
-    titleGroup.value = titleGroupStore
-  }
-})
 </script>
 <style scoped>
 .title {
   font-weight: bold;
   font-size: 1.5em;
 }
+
 .title .alternative {
   font-size: 0.8em;
   color: var(--color-secondary);
   cursor: pointer;
 }
+
 .p-floatlabel {
   margin: 30px 0px;
 }
+
 .select-existing-edition {
   width: 500px;
 }
+
 .validate-button {
   margin-top: 20px;
 }

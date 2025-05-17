@@ -297,7 +297,7 @@ import { uploadTorrent, type Torrent, type UploadedTorrent } from '@/services/ap
 import { useTitleGroupStore } from '@/stores/titleGroup'
 import { useI18n } from 'vue-i18n'
 
-const torrentFile = ref({ files: [] })
+const torrentFile = ref({ files: [] as unknown[] })
 const step = ref(1)
 const torrentForm = ref({
   edition_group_id: '',
@@ -316,7 +316,7 @@ const torrentForm = ref({
   features: [],
   audio_channels: null,
   audio_bitrate_sampling: null,
-  torrent_file: null,
+  torrent_file: '',
   uploaded_as_anonymous: false,
 })
 // TODO : move all the selectable* arrays to an helper function
@@ -419,7 +419,7 @@ const onFormSubmit = ({ valid }: FormSubmitEvent) => {
 const onFileSelect = (event: FileUploadSelectEvent) => {
   if (event.files && event.files.length > 0) {
     // keep a single file
-    const file = event.files[event.files.length - 1]
+    const file = event.files[event.files.length - 1] as string
     // torrentFile.value.files.clear()
     torrentFile.value.files = [file]
     torrentForm.value.torrent_file = file

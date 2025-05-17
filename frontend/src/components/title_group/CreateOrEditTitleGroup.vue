@@ -133,7 +133,7 @@
         $t('title_group.original_release_date')
       }}</label>
       <DatePicker
-        v-model="titleGroupForm.original_release_date"
+        v-model="original_release_date"
         showIcon
         :showOnFocus="false"
         inputId="original_release_date"
@@ -151,7 +151,7 @@
     </div>
     <div class="covers input-list">
       <label>{{ $t('general.cover', 2) }}</label>
-      <div v-for="(link, index) in titleGroupForm.covers" :key="index">
+      <div v-for="(_link, index) in titleGroupForm.covers" :key="index">
         <InputText size="small" v-model="titleGroupForm.covers[index]" :name="`covers[${index}]`" />
         <Button v-if="index == 0" @click="addCover" icon="pi pi-plus" size="small" />
         <Button
@@ -161,18 +161,18 @@
           size="small"
         />
         <Message
-          v-if="$form.covers?.[index]?.invalid"
+          v-if="($form.covers as unknown as FormFieldState[])?.[index]?.invalid"
           severity="error"
           size="small"
           variant="simple"
         >
-          {{ $form.covers[index].error?.message }}
+          {{ ($form.covers as unknown as FormFieldState[])[index].error?.message }}
         </Message>
       </div>
     </div>
     <div class="screenshots input-list" v-if="content_type == 'software'">
       <label>{{ $t('general.screenshots') }}</label>
-      <div v-for="(link, index) in titleGroupForm.screenshots" :key="index">
+      <div v-for="(_link, index) in titleGroupForm.screenshots" :key="index">
         <InputText
           size="small"
           v-model="titleGroupForm.screenshots[index]"
@@ -186,18 +186,18 @@
           size="small"
         />
         <Message
-          v-if="$form.screenshots?.[index]?.invalid"
+          v-if="($form.screenshots as unknown as FormFieldState[])?.[index]?.invalid"
           severity="error"
           size="small"
           variant="simple"
         >
-          {{ $form.screenshots[index].error?.message }}
+          {{ ($form.screenshots as unknown as FormFieldState[])[index].error?.message }}
         </Message>
       </div>
     </div>
     <div class="external-links input-list">
       <label>{{ $t('general.external_link', 2) }}</label>
-      <div v-for="(link, index) in titleGroupForm.external_links" :key="index">
+      <div v-for="(_link, index) in titleGroupForm.external_links" :key="index">
         <InputText
           size="small"
           v-model="titleGroupForm.external_links[index]"
@@ -211,12 +211,12 @@
           size="small"
         />
         <Message
-          v-if="$form.external_links?.[index]?.invalid"
+          v-if="($form.external_links as unknown as FormFieldState[])?.[index]?.invalid"
           severity="error"
           size="small"
           variant="simple"
         >
-          {{ $form.external_links[index].error?.message }}
+          {{ ($form.external_links as unknown as FormFieldState[])[index].error?.message }}
         </Message>
       </div>
     </div>
@@ -233,8 +233,13 @@
   </Form>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { Form, type FormResolverOptions, type FormSubmitEvent } from '@primevue/forms'
+import { onMounted, ref, computed } from 'vue'
+import {
+  Form,
+  type FormFieldState,
+  type FormResolverOptions,
+  type FormSubmitEvent,
+} from '@primevue/forms'
 import FloatLabel from 'primevue/floatlabel'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -243,7 +248,11 @@ import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
 import Message from 'primevue/message'
 import { InputNumber } from 'primevue'
-import type { ContentType, UserCreatedTitleGroup } from '@/services/api/torrentService'
+import type {
+  ContentType,
+  TitleGroupCategory,
+  UserCreatedTitleGroup,
+} from '@/services/api/torrentService'
 import { useI18n } from 'vue-i18n'
 import { isValidUrl } from '@/services/helpers'
 
@@ -258,7 +267,7 @@ const {
   sendingTitleGroup = false,
 } = defineProps<Props>()
 
-const titleGroupForm = ref<UserCreatedTitleGroup>({
+const titleGroupForm = ref<Omit<UserCreatedTitleGroup, 'content_type'>>({
   name: '',
   description: '',
   original_language: '',
@@ -266,7 +275,7 @@ const titleGroupForm = ref<UserCreatedTitleGroup>({
   covers: [''],
   screenshots: [''],
   external_links: [''],
-  category: '',
+  category: 'Ep',
   country_from: '',
   name_aliases: [],
   affiliated_artists: {},
@@ -275,14 +284,26 @@ const titleGroupForm = ref<UserCreatedTitleGroup>({
   platform: null,
   embedded_links: {},
 })
+
+const original_release_date = computed({
+  get() {
+    const isValidDateStr = !isNaN(Date.parse(titleGroupForm.value.original_release_date ?? ''))
+    return isValidDateStr ? new Date(titleGroupForm.value.original_release_date ?? '') : null
+  },
+  set(newValue) {
+    titleGroupForm.value.original_release_date = newValue?.toISOString() ?? ''
+  },
+})
+
 const tagsString = ref('')
 const selectableCountries = ['France', 'UK', 'USA', 'Scotland']
-const selectableCategories = {
+const selectableCategories: Record<ContentType, TitleGroupCategory[]> = {
   book: ['Illustrated', 'Periodical', 'Book', 'Article', 'Manual'],
   music: ['Single', 'Album', 'Ep'],
   movie: ['FeatureFilm', 'ShortFilm'],
   software: ['Program', 'Game'],
   collection: ['Other'],
+  tv_show: [],
 }
 
 const { t } = useI18n()
@@ -291,6 +312,12 @@ const emit = defineEmits<{
   validated: [titleGroup: UserCreatedTitleGroup]
 }>()
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type FormErrors = {
+  [key in keyof UserCreatedTitleGroup]: UserCreatedTitleGroup[key] extends Array<unknown>
+    ? { message: string }[][]
+    : { message: string }[]
+}
 const resolver = ({ values }: FormResolverOptions) => {
   const errors: Partial<Record<keyof UserCreatedTitleGroup, { message: string }[]>> = {}
 
@@ -324,7 +351,7 @@ const resolver = ({ values }: FormResolverOptions) => {
       if (!('external_links' in errors)) {
         errors.external_links = []
       }
-      errors.external_links[index] = [{ message: t('error.invalid_url') }]
+      errors.external_links![index] = { message: t('error.invalid_url') }
     }
   })
   values.covers.forEach((link: string, index: number) => {
@@ -332,7 +359,7 @@ const resolver = ({ values }: FormResolverOptions) => {
       if (!('covers' in errors)) {
         errors.covers = []
       }
-      errors.covers[index] = [{ message: t('error.invalid_url') }]
+      errors.covers![index] = { message: t('error.invalid_url') }
     }
   })
   if (values.screenshots) {
@@ -341,7 +368,7 @@ const resolver = ({ values }: FormResolverOptions) => {
         if (!('screenshots' in errors)) {
           errors.screenshots = []
         }
-        errors.screenshots[index] = [{ message: t('error.invalid_url') }]
+        errors.screenshots![index] = { message: t('error.invalid_url') }
       }
     })
   }
@@ -352,7 +379,7 @@ const resolver = ({ values }: FormResolverOptions) => {
 const onFormSubmit = ({ valid }: FormSubmitEvent) => {
   if (valid) {
     titleGroupForm.value.tags = tagsString.value.trim().split(',')
-    emit('validated', titleGroupForm.value)
+    emit('validated', { ...titleGroupForm.value, content_type })
     console.log('validated')
   }
 }
@@ -385,37 +412,48 @@ onMounted(() => {
   width: 100%;
   height: 10em;
 }
+
 .name {
   width: 50%;
+
   input {
     width: 100%;
   }
 }
+
 .tags {
   width: 50%;
+
   input {
     width: 100%;
   }
 }
+
 .select {
   width: 200px;
 }
+
 .p-floatlabel {
   margin-top: 30px;
 }
+
 .original-release-date {
   margin-top: 30px;
 }
+
 .input-list {
   margin-top: 15px;
 }
+
 .input-list .p-component {
   margin-right: 5px;
   margin-bottom: 5px;
 }
+
 .input-list input {
   width: 400px;
 }
+
 .validate-button {
   margin-top: 20px;
 }

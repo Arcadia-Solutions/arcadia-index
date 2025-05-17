@@ -1,7 +1,7 @@
 import { compact } from 'lodash-es'
 
-export function GB(size) {
-  return size * 1024 * 1024 * 1024
+export function GB(sizeInBytes: number) {
+  return sizeInBytes * 1024 * 1024 * 1024
 }
 
 export const AUDIO_OPTION = {
@@ -26,7 +26,7 @@ export const DISK_SIZE = {
   BD100: GB(93.13),
 }
 
-export function splitIntoBDInfoSections(text) {
+export function splitIntoBDInfoSections(text: string) {
   return compact(
     text
       .trim()
@@ -36,7 +36,7 @@ export function splitIntoBDInfoSections(text) {
   )
 }
 
-export function splitIntoSections(text) {
+export function splitIntoSections(text: string) {
   return compact(
     text
       .trim()
@@ -46,7 +46,7 @@ export function splitIntoSections(text) {
   )
 }
 
-export function splitIntoLines(text) {
+export function splitIntoLines(text: string) {
   return compact(
     text
       .trim()
@@ -56,7 +56,7 @@ export function splitIntoLines(text) {
   )
 }
 
-export function extractBBCode(bbcode) {
+export function extractBBCode(bbcode: string) {
   const found = bbcode.match(/\[mediainfo\]([\s\S]*?)\[\/mediainfo\]/i)
   if (!found) {
     return
@@ -64,11 +64,11 @@ export function extractBBCode(bbcode) {
   return found[1].trim()
 }
 
-export function removeMediainfoTag(bbcode) {
+export function removeMediainfoTag(bbcode: string) {
   return bbcode.replace('[mediainfo]', '').replace('[/mediainfo]', '').trim()
 }
 
-export function calcDiskType(size) {
+export function calcDiskType(size: number) {
   if (size <= DISK_SIZE.BD25) {
     return 'BD25'
   } else if (size <= DISK_SIZE.BD50) {
